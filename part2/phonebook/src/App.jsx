@@ -1,6 +1,22 @@
 import { useEffect, useState } from 'react';
 import personService from './services/persons';
 
+const Notification = ({ message }) => {
+	if (message === null) {
+		return null;
+	}
+
+	return (
+		<div
+			className={`${
+				message.type === 'success' ? 'success' : 'error'
+			} notification`}
+		>
+			{message.content}
+		</div>
+	);
+};
+
 const Filter = ({ search, handleSearchChange }) => {
 	return (
 		<div>
@@ -31,10 +47,10 @@ const PersonForm = ({
 	);
 };
 
-const Persons = ({ showPerson, handlePersonDelete }) => {
+const Persons = ({ personsToShow, handlePersonDelete }) => {
 	return (
 		<div>
-			{showPerson.map((person) => (
+			{personsToShow.map((person) => (
 				<p key={person.id}>
 					{person.name} {person.number}{' '}
 					<button onClick={() => handlePersonDelete(person.id)}>delete</button>
@@ -56,6 +72,7 @@ const App = () => {
 	const [newName, setNewName] = useState('');
 	const [newNumber, setNewNumber] = useState('');
 	const [search, setSearch] = useState('');
+	const [notfication, setNotification] = useState(null);
 
 	const addContact = (event) => {
 		event.preventDefault();
@@ -77,6 +94,20 @@ const App = () => {
 						);
 						setNewName('');
 						setNewNumber('');
+					})
+					.catch(() => {
+						setNotification({
+							content: `Information of ${existingPerson.name} has already been removed from the server`,
+							type: 'error',
+						});
+
+						setPersons(
+							persons.filter((person) => person.name !== existingPerson.name)
+						);
+
+						setTimeout(() => {
+							setNotification(null);
+						}, 5000);
 					});
 			}
 			return;
@@ -91,16 +122,35 @@ const App = () => {
 			setPersons(persons.concat(returnedPerson));
 			setNewName('');
 			setNewNumber('');
+			setNotification({ content: `Added ${newPerson.name}`, type: 'success' });
+
+			setTimeout(() => {
+				setNotification(null);
+			}, 5000);
 		});
 	};
 
 	const handlePersonDelete = (id) => {
-		const person = persons.find((person) => person.id === id);
-		const confirmation = confirm(`Delete ${person.name}?`);
+		const existingPerson = persons.find((person) => person.id === id);
+		const confirmation = confirm(`Delete ${existingPerson.name}?`);
 		if (confirmation) {
 			personService
 				.remove(id)
-				.then(() => setPersons(persons.filter((person) => person.id !== id)));
+				.then(() => setPersons(persons.filter((person) => person.id !== id)))
+				.catch(() => {
+					setNotification({
+						content: `Information of ${existingPerson.name} has already been removed from the server`,
+						type: 'error',
+					});
+
+					setPersons(
+						persons.filter((person) => person.name !== existingPerson.name)
+					);
+
+					setTimeout(() => {
+						setNotification(null);
+					}, 5000);
+				});
 		}
 	};
 
@@ -116,7 +166,7 @@ const App = () => {
 		setSearch(event.target.value);
 	};
 
-	const showPerson = search
+	const personsToShow = search
 		? persons.filter((person) =>
 				person.name.toLowerCase().includes(search.toLowerCase())
 		  )
@@ -125,6 +175,7 @@ const App = () => {
 	return (
 		<div>
 			<h2>Phonebook</h2>
+			<Notification message={notfication} />
 			<Filter search={search} handleSearchChange={handleSearchChange} />
 			<PersonForm
 				addContact={addContact}
@@ -135,7 +186,7 @@ const App = () => {
 			/>
 			<h2>Numbers</h2>
 			<Persons
-				showPerson={showPerson}
+				personsToShow={personsToShow}
 				handlePersonDelete={handlePersonDelete}
 			/>
 		</div>
