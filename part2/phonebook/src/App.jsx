@@ -118,16 +118,24 @@ const App = () => {
 			number: newNumber,
 		};
 
-		personService.create(newPerson).then((returnedPerson) => {
-			setPersons(persons.concat(returnedPerson));
-			setNewName('');
-			setNewNumber('');
-			setNotification({ content: `Added ${newPerson.name}`, type: 'success' });
+		personService
+			.create(newPerson)
+			.then((returnedPerson) => {
+				setPersons(persons.concat(returnedPerson));
+				setNewName('');
+				setNewNumber('');
+				setNotification({
+					content: `Added ${newPerson.name}`,
+					type: 'success',
+				});
 
-			setTimeout(() => {
-				setNotification(null);
-			}, 5000);
-		});
+				setTimeout(() => {
+					setNotification(null);
+				}, 5000);
+			})
+			.catch((error) => {
+				setNotification({ type: 'error', content: error.response.data.error });
+			});
 	};
 
 	const handlePersonDelete = (id) => {
