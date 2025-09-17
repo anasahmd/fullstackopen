@@ -5,12 +5,11 @@ if (process.argv.length < 3) {
 	process.exit(1);
 }
 
-if (process.argv.length == 4) {
+if (process.argv.length === 4) {
 	console.log('number needed!');
 	process.exit(1);
 }
 
-const password = process.argv[2];
 const name = process.argv[3];
 const number = process.argv[4];
 
@@ -27,7 +26,7 @@ const personSchema = new mongoose.Schema({
 
 const Person = mongoose.model('Person', personSchema);
 
-if (process.argv.length == 3) {
+if (process.argv.length === 3) {
 	Person.find({}).then((result) => {
 		console.log('phonebook:');
 
@@ -39,7 +38,7 @@ if (process.argv.length == 3) {
 } else {
 	const person = new Person({ name, number });
 
-	person.save().then((result) => {
+	person.save().then(() => {
 		console.log(`added ${name} number ${number} to phonebook`);
 		mongoose.connection.close();
 	});
