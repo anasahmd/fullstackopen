@@ -84,6 +84,48 @@ test('missing title or url returns status 400', async () => {
 		.expect('Content-Type', /application\/json/);
 });
 
+test('delete blog by id', async () => {
+	const blogsAtStart = await helper.blogsInDb();
+	const blogToDelete = blogsAtStart[0];
+
+	await api.delete(`/api/blogs/${blogToDelete.id}`).expect(204);
+
+	const blogsAtEnd = await helper.blogsInDb();
+
+	const titles = blogsAtEnd.map((n) => n.title);
+
+	assert.strictEqual(blogsAtStart.length - 1, blogsAtEnd.length);
+
+	assert(!titles.includes(blogToDelete.title));
+});
+
+test('update blog', async () => {
+	const blogs = await helper.blogsInDb();
+	const blogToUpdate = blogs[0];
+
+	await api
+		.put(`/api/blogs/${blogToUpdate.id}`)
+		.send({
+			title: 'Updated Title',
+			author: 'Update Author',
+			likes: blogToUpdate.likes + 1,
+		})
+		.expect(200)
+		.expect('Content-Type', /application\/json/);
+
+	const blogsAfterUpdate = await helper.blogsInDb();
+
+	const titles = blogsAfterUpdate.map((n) => n.title);
+
+	assert(titles.includes('Updated Title'));
+
+	const foundBlog = blogsAfterUpdate.find(
+		(blog) => blog.title === 'Updated Title'
+	);
+
+	assert.strictEqual(foundBlog.likes, blogToUpdate.likes + 1);
+});
+
 after(async () => {
 	await mongoose.connection.close();
 });
