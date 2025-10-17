@@ -70,6 +70,20 @@ test('empty likes field creates a blog with 0 likes', async () => {
 	assert.strictEqual(response.body.likes, 0);
 });
 
+test('missing title or url returns status 400', async () => {
+	await api
+		.post('/api/blogs')
+		.send({ title: 'Blog without url should return 400' })
+		.expect(400)
+		.expect('Content-Type', /application\/json/);
+
+	await api
+		.post('/api/blogs')
+		.send({ url: 'anasahmad.dev/blog-without-title' })
+		.expect(400)
+		.expect('Content-Type', /application\/json/);
+});
+
 after(async () => {
 	await mongoose.connection.close();
 });
