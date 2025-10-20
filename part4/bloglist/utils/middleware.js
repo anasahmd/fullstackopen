@@ -1,4 +1,6 @@
 const logger = require('./logger');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
 const requestLogger = (request, response, next) => {
 	logger.info('Method:', request.method);
@@ -26,12 +28,46 @@ const errorHandler = (error, request, response, next) => {
 		return response
 			.status(400)
 			.json({ error: 'expected `username` to be unique' });
+	} else if (error.name === 'JsonWebTokenError') {
+		return response.status(401).json({ error: 'token invalid' });
 	}
 	next(error);
+};
+
+const tokenExtractor = (request, response, next) => {
+	const authorization = request.get('authorization');
+
+	if (authorization && authorization.startsWith('Bearer ')) {
+		request.token = authorization.replace('Bearer ', '');
+	} else {
+		request.token = null;
+	}
+
+	next();
+};
+
+const userExtractor = async (request, response, next) => {
+	const token = jwt.verify(request.token, process.env.JWT_SECRET);
+
+	if (!token.id) {
+		response.status(401).json({ error: 'token invalid' });
+	}
+
+	const user = await User.findById(token.id);
+
+	if (!user) {
+		response.status(401).json({ error: 'invalid user' });
+	}
+
+	request.user = user;
+
+	next();
 };
 
 module.exports = {
 	requestLogger,
 	unknownEndpoint,
 	errorHandler,
+	tokenExtractor,
+	userExtractor,
 };
